@@ -1,0 +1,16 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "playwright-progress",
+  "main": "worker.js",
+  "compatibility_date": "2026-11-06",
+  "workers_dev": true,
+  "vars": {
+    "ALLOWED_ORIGINS": "https://sagaryessee.github.io,http://localhost:8787,http://localhost:8080"
+  },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "playwright-progress",
+    "database_id": "f8bb5d54-ef66-455a-9a4b-bb9a554465bd",
+    "migrations_dir": "migrations"
+  }]
+}

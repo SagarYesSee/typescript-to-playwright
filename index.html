@@ -1,4 +1,12 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+.sync-card { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid currentColor; }
+.sync-card h2 { font-size: 1.05rem; margin: 0 0 .5rem; }
+.sync-card p { font-size: .85rem; line-height: 1.5; }
+.sync-card input[type=password], .sync-card input[type=text] { display: block; box-sizing: border-box; width: 100%; padding: .65rem; margin: .5rem 0; font: inherit; border: 1px solid currentColor; border-radius: .4rem; background: transparent; color: inherit; }
+.sync-card .sync-actions { display: flex; gap: .4rem; flex-wrap: wrap; margin: .65rem 0; }
+.sync-card label { font-size: .85rem; }
+.sync-card [hidden] { display: none !important; }
+</style></head><body>
 <title>TypeScript to Playwright</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Atkinson+Hyperlegible+Next:wght@400;500;600;700&family=Ubuntu:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap">
@@ -399,6 +407,27 @@ footer{padding-block:24px 96px;border-top:1px solid var(--line);color:var(--mute
       <div id="nextstep" class="muted">Next: Day 1</div>
       <div class="fontpick" role="group" aria-label="Reading font"><span>Reading font</span><button class="btn" type="button" id="font-atk" data-font="atkinson" aria-pressed="true">Atkinson</button><button class="btn" type="button" id="font-ubu" data-font="ubuntu" aria-pressed="false">Ubuntu</button></div>
       <div class="themepick" role="group" aria-label="Theme"><span>Theme</span><button class="btn" type="button" id="theme-auto" data-theme-opt="auto" aria-pressed="true">Auto</button><button class="btn" type="button" id="theme-light" data-theme-opt="light" aria-pressed="false">Light</button><button class="btn" type="button" id="theme-dark" data-theme-opt="dark" aria-pressed="false">Dark</button></div>
+      <section id="cloud-sync" class="sync-card" aria-label="Cloud progress saving">
+        <h2>Save across devices</h2>
+        <p id="sync-status" role="status">Progress is saved in this browser. Connect cloud saving to use it on your other devices.</p>
+        <div id="sync-setup">
+          <button class="btn" id="sync-create" type="button">Create private sync code</button>
+          <p>Already have a code? Enter it below.</p>
+          <label for="sync-code">Private sync code</label>
+          <input id="sync-code" type="password" autocomplete="off" spellcheck="false" placeholder="pw1_…">
+          <label><input id="sync-merge" type="checkbox" checked> Include this browser’s existing progress</label>
+          <div class="sync-actions"><button class="btn" id="sync-connect" type="button">Connect</button></div>
+        </div>
+        <div id="sync-connected" hidden>
+          <div class="sync-actions"><button class="btn" id="sync-retry" type="button">Sync now / Retry</button><button class="btn" id="sync-disconnect" type="button">Disconnect this device</button></div>
+          <details id="sync-code-details"><summary>Your private sync code</summary>
+            <p>Keep this code safe. Enter it on another device to load your progress. Anyone with it can access or change your progress. Lost codes cannot be recovered.</p>
+            <label for="sync-saved-code">Your code</label>
+            <input id="sync-saved-code" type="password" readonly autocomplete="off" spellcheck="false">
+            <div class="sync-actions"><button class="btn" id="sync-show" type="button">Show</button><button class="btn" id="sync-copy" type="button">Copy code</button></div>
+          </details>
+        </div>
+      </section>
     </div>
   </div>
 </header>
@@ -434,7 +463,7 @@ footer{padding-block:24px 96px;border-top:1px solid var(--line);color:var(--mute
     <header>
       <div class="label">Roadmap</div>
       <h2>70 study days, about an hour each</h2>
-      <p class="muted">Budget 60–90 minutes a day, and stretch a day when a lab takes longer. Tick a day only when you can redo the exercise without copying the example and explain how you know it passed. For UI tests, assert something a user can see after the interaction. Open a day for the task and where to learn it. Ticks are saved in this browser only.</p>
+      <p class="muted">Budget 60–90 minutes a day, and stretch a day when a lab takes longer. Tick a day only when you can redo the exercise without copying the example and explain how you know it passed. For UI tests, assert something a user can see after the interaction. Open a day for the task and where to learn it. Ticks are saved in this browser. Connect cloud saving at the top to sync across devices.</p>
     </header>
     <div class="weeks" id="weeks"></div>
   </div>
@@ -3183,7 +3212,7 @@ npx playwright show-report
 </main>
 
 <footer class="gutter">
-  <div class="in">Built for Sagar's move from Java testing to Playwright with TypeScript. Progress ticks and quiz answers are saved in this browser only.</div>
+  <div class="in">Built for Sagar's move from Java testing to Playwright with TypeScript. Progress ticks and quiz answers are saved in this browser, with optional private cloud syncing.</div>
 </footer>
 
 <button type="button" class="themefab" id="themefab" aria-label="Theme: Auto. Switch to Light.">
@@ -3255,7 +3284,7 @@ npx playwright show-report
   var KEY = "tsPwPath.v1";
   var state = { done: [], quiz: {}, labs: [], font: "atkinson", theme: "auto" };
   try { var saved = JSON.parse(localStorage.getItem(KEY) || "null"); if (saved && typeof saved === "object") { state.done = saved.done || []; state.quiz = saved.quiz || {}; state.labs = saved.labs || []; state.font = saved.font || "atkinson"; state.theme = saved.theme || "auto"; } } catch (e) {}
-  var save = function () { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+  var save = function () { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} window.dispatchEvent(new Event("progress-change")); };
 
   /* ---------- roadmap ---------- */
   var V = function (s) { return "https://www.youtube.com/watch?v=788GvvcfwTY&t=" + s + "s"; };
@@ -3772,7 +3801,17 @@ npx playwright show-report
   });
   $("#qreset").addEventListener("click", function () { state.quiz = {}; save(); renderQuiz(); });
   renderQuiz();
+  window.ProgressBridge = {
+    read: function () { return JSON.parse(JSON.stringify(state)); },
+    apply: function (next) {
+      state.done = next.done; state.labs = next.labs; state.quiz = next.quiz;
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+      renderRoadmap(); renderLabs(); renderQuiz();
+    }
+  };
 })();
 </script>
 
+<script src="sync-config.js"></script>
+<script src="cloud-sync.js"></script>
 </body></html>
