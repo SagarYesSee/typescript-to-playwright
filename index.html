@@ -6,6 +6,16 @@
 .sync-card .sync-actions { display: flex; gap: .4rem; flex-wrap: wrap; margin: .65rem 0; }
 .sync-card label { font-size: .85rem; }
 .sync-card [hidden] { display: none !important; }
+#practice-design .in { grid-template-columns: minmax(0, 1fr); }
+#practice-design .card { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); min-width: 0; padding-block: 24px; border-top: 1px dashed var(--line); }
+.compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.lesson > .note { grid-column: 1 / -1; }
+.compare > div { min-width: 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+@media (max-width: 700px) { .compare { grid-template-columns: 1fr; } }
+.topic { margin: 1rem 0; padding: .75rem; border: 1px solid var(--line, #888); border-radius: .5rem; }
+.topic label { display: flex; align-items: center; gap: .5rem; min-height: 44px; }
+.topic input { width: 20px; height: 20px; }
 </style></head><body>
 <title>TypeScript to Playwright</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -389,9 +399,39 @@ footer{padding-block:24px 96px;border-top:1px solid var(--line);color:var(--mute
   .rung{grid-template-columns:minmax(0,1fr)}
   .day .more{padding-left:0}
 }
+/* Use the desktop canvas, with optional section navigation beside the content. */
+.in { max-width: none; }
+body { padding-top: 56px; }
+.page-toolbar { position: fixed; inset: 0 0 auto; height: 56px; z-index: 8; display: flex; align-items: center; gap: 14px; padding-inline: 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.page-toolbar .label { margin: 0; }
+#sections-toggle { min-height: 40px; }
+nav.tabs { top: 56px; }
+nav.tabs .row { width: auto; }
+nav.tabs a { min-height: 40px; display: flex; align-items: center; }
+body[data-sections="closed"] nav.tabs { display: none; }
+section.block, .lesson { scroll-margin-top: 72px; }
+@media (min-width: 1100px) {
+  body[data-sections="open"] { padding-left: 256px; }
+  .gutter { padding-inline: 24px; }
+  nav.tabs { position: fixed; left: 0; bottom: 0; width: 256px; padding: 16px 12px; overflow-y: auto; border-right: 1px solid var(--line); border-bottom: 0; }
+  nav.tabs .scroll { overflow: visible; }
+  nav.tabs .row { flex-direction: column; align-items: stretch; gap: 6px; padding: 0; }
+  nav.tabs a { border-radius: 8px; white-space: normal; }
+}
+@media (max-width: 1099px) {
+  nav.tabs { max-height: 45vh; overflow-y: auto; }
+  nav.tabs .scroll { overflow: visible; }
+  nav.tabs .row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  nav.tabs a { white-space: normal; border-radius: 8px; }
+  .page-toolbar .label { font-size: 11px; }
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
+<div class="page-toolbar">
+  <button type="button" class="btn" id="sections-toggle" aria-controls="section-panel" aria-expanded="true">Hide sections</button>
+  <span class="label">TypeScript to Playwright</span>
+</div>
 <header class="hero gutter">
   <div class="in">
     <div>
@@ -432,7 +472,7 @@ footer{padding-block:24px 96px;border-top:1px solid var(--line);color:var(--mute
   </div>
 </header>
 
-<nav class="tabs gutter" aria-label="Sections">
+<nav class="tabs gutter" id="section-panel" aria-label="Sections">
   <div class="in scroll">
     <div class="row">
       <a href="#roadmap">Roadmap</a>
@@ -451,6 +491,7 @@ footer{padding-block:24px 96px;border-top:1px solid var(--line);color:var(--mute
       <a href="#interview">Interview Qs</a>
       <a href="#quiz">Quiz</a>
       <a href="#cheatsheet">Cheat sheet</a>
+      <a href="#practice-design">Advanced practice</a>
     </div>
   </div>
 </nav>
@@ -886,7 +927,13 @@ retries = retries + 1;
       </div>
     </article>
 
-    <article class="lesson" id="l-types">
+    <article class="lesson" id="l-types"><div class="note"><h4>Data contracts across languages</h4><p>A Java record exists at runtime. A TypeScript type is erased; neither a cast nor an interface validates an API response. Validate external data at runtime.</p><div class="compare"><div><span class="chip java">Java / Selenium</span><pre class="code" data-lang="plain"><script type="text/plain">
+record User(String name, boolean admin) {}
+User user = new User("Sam", false);
+</script></pre></div><div><span class="chip ts">TypeScript / Playwright</span><pre class="code" data-lang="plain"><script type="text/plain">
+type User = { name: string; admin: boolean };
+const user: User = { name: "Sam", admin: false };
+</script></pre></div></div></div>
       <div class="side"><span class="num">Lesson 3</span><span class="label">Types</span></div>
       <div class="body">
         <h3>Basic types, unions and optional fields</h3>
@@ -972,7 +1019,15 @@ const city = user.address?.city;      // ?. gives undefined instead of crashing
       </div>
     </article>
 
-    <article class="lesson" id="l-func">
+    <article class="lesson" id="l-func"><div class="note"><h4>Typed functions</h4><p>Java methods belong to classes. TypeScript can export a standalone function. Both examples reject nonnumeric arguments during type checking.</p><div class="compare"><div><span class="chip java">Java / Selenium</span><pre class="code" data-lang="plain"><script type="text/plain">
+static double total(double price, int quantity) {
+    return price * quantity;
+}
+</script></pre></div><div><span class="chip ts">TypeScript / Playwright</span><pre class="code" data-lang="plain"><script type="text/plain">
+export function total(price: number, quantity = 1): number {
+  return price * quantity;
+}
+</script></pre></div></div></div>
       <div class="side"><span class="num">Lesson 5</span><span class="label">Functions</span></div>
       <div class="body">
         <h3>Functions, arrow functions and template strings</h3>
@@ -1044,7 +1099,15 @@ const all = [...smoke, "checkout"];   // ["login", "cart", "checkout"]
       </div>
     </article>
 
-    <article class="lesson" id="l-arr">
+    <article class="lesson" id="l-arr"><div class="note"><h4>Transform the same test data</h4><p>Java streams and TypeScript array methods both transform collections. Java lists use declared generic types; TypeScript infers the array element type.</p><div class="compare"><div><span class="chip java">Java / Selenium</span><pre class="code" data-lang="plain"><script type="text/plain">
+List<String> names = products.stream()
+    .filter(p -> p.inStock())
+    .map(Product::name).toList();
+</script></pre></div><div><span class="chip ts">TypeScript / Playwright</span><pre class="code" data-lang="plain"><script type="text/plain">
+const names = products
+  .filter(p => p.inStock)
+  .map(p => p.name);
+</script></pre></div></div></div>
       <div class="side"><span class="num">Lesson 7</span><span class="label">Arrays</span></div>
       <div class="body">
         <h3>Looping, <code>filter</code>, <code>map</code> and <code>find</code></h3>
@@ -1072,7 +1135,24 @@ const light = products.find(p => p.name.includes("Light")); // first match, or u
       </div>
     </article>
 
-    <article class="lesson" id="l-class">
+    <article class="lesson" id="l-class"><div class="note"><h4>Page object responsibilities</h4><p>Keep business assertions in tests. These equivalent page objects expose a login action; the test owns driver/page lifecycle and authentication data.</p><div class="compare"><div><span class="chip java">Java / Selenium</span><pre class="code" data-lang="plain"><script type="text/plain">
+class LoginPage {
+  private final WebDriver driver;
+  LoginPage(WebDriver driver) { this.driver = driver; }
+  void login(String user) {
+    driver.findElement(By.id("user")).sendKeys(user);
+    driver.findElement(By.id("submit")).click();
+  }
+}
+</script></pre></div><div><span class="chip ts">TypeScript / Playwright</span><pre class="code" data-lang="plain"><script type="text/plain">
+class LoginPage {
+  constructor(private readonly page: Page) {}
+  async login(user: string) {
+    await this.page.locator("#user").fill(user);
+    await this.page.locator("#submit").click();
+  }
+}
+</script></pre></div></div></div>
       <div class="side"><span class="num">Lesson 8</span><span class="label">Classes</span></div>
       <div class="body">
         <h3>Classes, the building block of Page Objects</h3>
@@ -1511,7 +1591,13 @@ test("valid user can log in", async ({ page }) => {                // 2
       </div>
     </article>
 
-    <article class="lesson" id="p-loc">
+    <article class="lesson" id="p-loc"><div class="note"><h4>Locate, then act</h4><p>Selenium By describes a lookup; a WebElement is a reference that may become stale after replacement. Playwright Locator resolves again when used; ambiguity and detached elements can still cause failures.</p><div class="compare"><div><span class="chip java">Java / Selenium</span><pre class="code" data-lang="plain"><script type="text/plain">
+By save = By.cssSelector("[data-testid=save]");
+new WebDriverWait(driver, Duration.ofSeconds(5))
+    .until(ExpectedConditions.elementToBeClickable(save)).click();
+</script></pre></div><div><span class="chip ts">TypeScript / Playwright</span><pre class="code" data-lang="plain"><script type="text/plain">
+await page.getByTestId("save").click();
+</script></pre></div></div></div>
       <div class="side"><span class="num">Step 5</span><span class="label">Locators</span></div>
       <div class="body">
         <h3>Pick locators from the top of this ladder</h3>
@@ -1525,7 +1611,13 @@ test("valid user can log in", async ({ page }) => {                // 2
       </div>
     </article>
 
-    <article class="lesson" id="p-wait">
+    <article class="lesson" id="p-wait"><div class="note"><h4>Wait for the same visible result</h4><p>Selenium uses an explicit condition here; Playwright locator assertions retry. Playwright actions also check actionability, but still assert the business outcome. Avoid mixing Selenium implicit and explicit waits.</p><div class="compare"><div><span class="chip java">Java / Selenium</span><pre class="code" data-lang="plain"><script type="text/plain">
+new WebDriverWait(driver, Duration.ofSeconds(5))
+    .until(ExpectedConditions.textToBePresentInElementLocated(
+        By.cssSelector("[data-testid=status]"), "Saved"));
+</script></pre></div><div><span class="chip ts">TypeScript / Playwright</span><pre class="code" data-lang="plain"><script type="text/plain">
+await expect(page.getByTestId("status")).toHaveText("Saved");
+</script></pre></div></div></div>
       <div class="side"><span class="num">Step 6</span><span class="label">Waiting</span></div>
       <div class="body">
         <h3>Auto-waiting and assertions that retry</h3>
@@ -3209,6 +3301,108 @@ npx playwright show-report
   </div>
 </section>
 
+<section class="block gutter" id="practice-design">
+<div class="in stack"><header><div class="label">Practice extensions</div><h2>Test design, execution and advanced practice</h2></header>
+<div class="card" id="risk-design"><h3>Choose tests by risk</h3>
+<p>List failure impact and likelihood before choosing automation. Put calculation and validation rules in unit tests, service contracts and authorization in API tests, and a small number of critical journeys in UI tests: the test pyramid is a guide to fast feedback, not a fixed percentage. Use exploratory testing for unknown behavior. A mocked UI test proves rendering under a controlled response; it does not prove the server implements that response.</p>
+<p>For an inclusive age range 18–65, test 17, 18, 19, 64, 65, 66 plus missing, nonnumeric and fractional input. Agree the rule before generating cases.</p>
+<div class="tablewrap"><table class="t"><thead><tr><th>Authenticated</th><th>Owner</th><th>Delete result</th></tr></thead><tbody><tr><td>No</td><td>Either</td><td>401; unchanged</td></tr><tr><td>Yes</td><td>No</td><td>403 (or documented 404); unchanged</td></tr><tr><td>Yes</td><td>Yes</td><td>204; record absent</td></tr></tbody></table></div>
+<p>Turn each decision-table row into a named API test. Select smoke tests for high-impact release risks; run broader boundary, browser and negative coverage in the full suite. Record what remains untested.</p></div>
+<div class="card" id="cli-practice"><h3>CLI discovery and repeatable runs</h3>
+<pre class="code" data-lang="sh"><script type="text/plain">
+npx playwright --help
+npx playwright test --help
+npx playwright install chromium
+npx playwright test tests/login.spec.ts:12 --project=chromium
+npx playwright test --grep "@smoke" --repeat-each=10 --retries=0
+</script></pre>
+<p>Use help from the installed version. The line selects the test declared at that location; update it when the file changes. Repeat with retries disabled to expose intermittent failures, then diagnose traces rather than adding sleeps. A Chromium project must exist in your config for the project option.</p>
+<p>Java teams often select a JUnit method through Maven (for example <code>mvn -Dtest=LoginTest#rejectsLogin test</code>); Playwright selects files, titles, tags, projects or line locations through its runner. Selenium itself is the browser library, not the test runner.</p></div>
+<div class="card" id="loading-practice"><h3>Control the loading state</h3>
+<p>For a practice app that fetches /api/items after Reload, hold the response until the spinner has been asserted, then release it. This verifies both loading and loaded states without relying on machine speed. Keep server integration tests separately.</p>
+<pre class="code" data-lang="plain"><script type="text/plain">
+test('loading then results', async ({ page }) => {
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/items', async route => {
+    await gate;
+    await route.fulfill({ json: [{ id: 1, name: 'Book' }] });
+  });
+  await page.goto('/items', { waitUntil: 'domcontentloaded' });
+  try {
+    await expect(page.getByRole('status')).toHaveText('Loading…');
+  } finally { release(); }
+  await expect(page.getByRole('listitem')).toHaveText(['Book']);
+});
+</script></pre>
+</div>
+<div class="card" id="advanced-api"><h3>Advanced API contracts and state</h3>
+<p>Use your own sandbox API with a documented contract. TypeScript annotations do not validate JSON. Install a runtime validator such as Zod in the practice project and assert nested fields, enums, nullable/optional fields and error schemas. A Java equivalent is REST Assured plus JSON Schema validation; Selenium does not test HTTP contracts itself.</p>
+<pre class="code" data-lang="plain"><script type="text/plain">
+import { z } from 'zod';
+const Item = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1),
+  state: z.enum(['pending', 'ready']),
+  metadata: z.object({ bytes: z.number().int().nonnegative() }).nullable()
+});
+const response = await request.get(`/api/items/${id}`);
+expect(response.status()).toBe(200);
+const item = Item.parse(await response.json());
+expect(item.name).toBe('Book');
+</script></pre>
+<ul>
+<li><b>Authentication and roles:</b> exercise missing, expired and malformed tokens; repeat every protected operation as owner, other user and administrator. Verify rejected writes leave state unchanged. Do not confuse UI hiding with server authorization.</li>
+<li><b>Pagination:</b> seed known records; follow cursors until exhausted with a page limit; check no duplicate or omitted IDs and empty/final pages. Test invalid cursors and documented page-size bounds.</li>
+<li><b>Filtering/sorting:</b> combine filters; assert every returned row satisfies them and exact ordering including ties. Test unknown fields, ascending/descending and zero matches.</li>
+<li><b>File metadata:</b> upload controlled bytes, verify filename, content type, byte length and checksum where documented; download and compare bytes. Include zero-byte, oversize and disallowed-type cases.</li>
+<li><b>Idempotency:</b> send the same creation payload twice with one Idempotency-Key; expect the same resource and one side effect. A different payload with that key must follow the documented conflict rule. Test key scope and expiry in an isolated environment.</li>
+<li><b>Rate limits:</b> use a dedicated sandbox quota; check documented 429 responses and Retry-After. Use a controlled mock for UI backoff; do not flood shared public services.</li>
+<li><b>Polling and cleanup:</b> a 202 response is acceptance, not completion. Poll a status endpoint with a bounded timeout; fail on terminal failure. Delete only IDs created by this test in finally/fixture teardown, even when assertions fail.</li>
+</ul>
+<pre class="code" data-lang="plain"><script type="text/plain">
+// In a test using an isolated API and a per-test unique name:
+let id: string | undefined;
+try {
+  const created = await request.post('/api/jobs', { data: { name: uniqueName } });
+  expect(created.status()).toBe(202);
+  id = (await created.json()).id;
+  await expect(async () => {
+    const result = await request.get(`/api/jobs/${id}`);
+    expect(result.status()).toBe(200);
+    expect((await result.json()).state).toBe('ready');
+  }).toPass({ timeout: 15_000, intervals: [200, 500, 1000] });
+} finally {
+  if (id) {
+    const removed = await request.delete(`/api/jobs/${id}`);
+    expect([204, 404]).toContain(removed.status());
+  }
+}
+</script></pre>
+</div>
+<div class="card" id="ai-practice"><h3>AI-assisted work with review and evaluations</h3>
+<p>Ask for candidate risks and boundary/decision-table cases from a sanitized contract. A human approves expected results against requirements. For code review, ask for missing awaits, weak assertions, shared data, locator ambiguity and cleanup leaks; inspect the diff and run tests before accepting suggestions.</p>
+<p>Debug with a minimal reproduction, redacted error and synthetic response. Remove tokens, cookies, saved authentication state, customer data and private URLs from logs and traces before sharing. Keep the original evidence privately; never let an AI invent the expected behavior to make a failure pass.</p>
+<pre class="code" data-lang="plain"><script type="text/plain">
+# prompts/review-v1.md
+Input: sanitized requirement, contract and test diff
+Task: propose missing boundary and authorization cases.
+For each finding: cite the requirement, trigger, expected result,
+and uncertainty. Do not change code or invent product rules.
+Output: candidate cases for human review.
+# evals/review-v1.json: synthetic fixtures + expected findings
+</script></pre>
+<p>Version prompts beside tests. Maintain an evaluation set of known defects, valid implementations and misleading suggestions. Compare prompt versions on defect detection, false positives, requirement coverage and whether generated tests actually fail for seeded defects. Record model/version, inputs, results and human decisions; rerun evaluations after prompt or model changes.</p></div>
+<div class="card" id="concept-mapping"><h3>Selenium and Tosca concept mapping</h3>
+<div class="tablewrap"><table class="t"><thead><tr><th>Intent</th><th>Java/Selenium ecosystem</th><th>Tosca concept</th><th>Playwright Test</th></tr></thead><tbody>
+<tr><td>Reusable interaction</td><td>Page object method</td><td>Reusable TestStepBlock / Module-based steps</td><td>Page object or fixture helper</td></tr>
+<tr><td>Find control</td><td>By / WebElement</td><td>Scanned Module attributes</td><td>Locator with role, label or test ID</td></tr>
+<tr><td>Test data cases</td><td>JUnit parameterized test</td><td>TestCase template / test data</td><td>Typed data and generated named tests</td></tr>
+<tr><td>Run and report</td><td>JUnit/TestNG, Maven, CI</td><td>ExecutionList and execution results</td><td>Projects, CLI, reporters and CI</td></tr>
+</tbody></table></div>
+<p>These are conceptual bridges, not import/conversion instructions or feature equivalence. Tosca terminology and capabilities depend on the installed product/version. This course teaches TypeScript and browser/API testing with Playwright Test; it does not cover Tosca administration, desktop/SAP automation, Selenium Grid operations, native mobile automation or load testing. Browser emulation is not a real native mobile device test.</p></div>
+<p>References: <a href="https://playwright.dev/docs/test-cli">Playwright CLI</a>, <a href="https://playwright.dev/docs/api/class-route">route API</a>, <a href="https://www.selenium.dev/documentation/en/webdriver/waits/">Selenium waits</a>.</p>
+</div></section>
 </main>
 
 <footer class="gutter">
@@ -3222,6 +3416,10 @@ npx playwright show-report
   <span id="themelabel">Auto</span>
 </button>
 
+
+
+
+<script src="topic-progress.js"></script>
 <script id="app">
 (function () {
   "use strict";
@@ -3280,10 +3478,40 @@ npx playwright show-report
     wrap.appendChild(b);
   });
 
+  /* ---------- collapsible section panel (device-local preference) ---------- */
+  var sectionsButton = document.getElementById('sections-toggle');
+  var sectionsPanel = document.getElementById('section-panel');
+  var desktopLayout = window.matchMedia('(min-width: 1100px)');
+  var sectionsPreference = null;
+  try { sectionsPreference = localStorage.getItem('tsPwPath.sections'); } catch (_) {}
+  function setSections(open) {
+    document.body.setAttribute('data-sections', open ? 'open' : 'closed');
+    sectionsButton.setAttribute('aria-expanded', String(open));
+    sectionsButton.textContent = open ? 'Hide sections' : 'Show sections';
+  }
+  setSections(sectionsPreference === 'open' || (sectionsPreference !== 'closed' && desktopLayout.matches));
+  sectionsButton.addEventListener('click', function () {
+    var open = sectionsButton.getAttribute('aria-expanded') !== 'true';
+    sectionsPreference = open ? 'open' : 'closed';
+    setSections(open);
+    try { localStorage.setItem('tsPwPath.sections', sectionsPreference); } catch (_) {}
+  });
+  desktopLayout.addEventListener('change', function () {
+    if (sectionsPreference === null) setSections(desktopLayout.matches);
+  });
+  sectionsPanel.addEventListener('click', function (event) {
+    if (!desktopLayout.matches && event.target.closest('a')) {
+      setSections(false);
+      // Move focus to the destination before hiding its navigation link.
+      var destination = document.querySelector(event.target.closest('a').getAttribute('href'));
+      if (destination) { destination.setAttribute('tabindex', '-1'); destination.focus({ preventScroll: true }); }
+    }
+  });
+
   /* ---------- storage ---------- */
   var KEY = "tsPwPath.v1";
-  var state = { done: [], quiz: {}, labs: [], font: "atkinson", theme: "auto" };
-  try { var saved = JSON.parse(localStorage.getItem(KEY) || "null"); if (saved && typeof saved === "object") { state.done = saved.done || []; state.quiz = saved.quiz || {}; state.labs = saved.labs || []; state.font = saved.font || "atkinson"; state.theme = saved.theme || "auto"; } } catch (e) {}
+  var state = { done: [], topics: {}, quiz: {}, labs: [], font: "atkinson", theme: "auto" };
+  try { var saved = JSON.parse(localStorage.getItem(KEY) || "null"); if (saved && typeof saved === "object") { state.done = saved.done || []; state.topics = saved.topics || {}; state.quiz = saved.quiz || {}; state.labs = saved.labs || []; state.font = saved.font || "atkinson"; state.theme = saved.theme || "auto"; } } catch (e) {}
   var save = function () { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} window.dispatchEvent(new Event("progress-change")); };
 
   /* ---------- roadmap ---------- */
@@ -3362,38 +3590,60 @@ npx playwright show-report
     [69, 10, "Package the evidence", "Include the CI workflow, a readable report, a short coverage matrix and a README with exact run commands. Explain one locator choice, one fixture, and one failure you diagnosed from a trace.", [["Git: README", "#g-readme"]]],
     [70, 10, "Demonstrate it", "From a fresh checkout, run one smoke test, show the full-suite CI result and walk through a failed trace. Add one new scenario without following a tutorial. Show your interaction labs separately where the portfolio app lacks a feature.", [["Interaction labs", "#labs"], ["Interview Qs", "#interview"]]]
   ];
+  var topicCatalog = TopicProgress.days;
+  function migrateTopics() {
+    var values = {};
+    state.done.forEach(function (d) { values['day:' + d] = true; });
+    Object.keys(state.topics).forEach(function (id) { values['topic:' + id] = state.topics[id]; });
+    var expanded = TopicProgress.expand(values);
+    TopicProgress.ids.forEach(function (id) { state.topics[id] = expanded['topic:' + id]; });
+  }
+  migrateTopics();
+  function dayComplete(d) { return topicCatalog[d].every(function (t) { return state.topics[t.id] === true; }); }
   function fmtTask(t) { return esc(t).replace(/`([^`]+)`/g, "<code>$1</code>"); }
   /* Handbook chapters linked from each roadmap day */
   var HB = { 2: [], 8: [2, 3], 9: [8], 10: [4], 11: [4], 12: [7], 13: [6], 14: [20], 15: [5], 16: [5], 17: [5], 18: [5], 19: [5], 20: [5], 21: [11], 22: [10], 25: [5], 26: [5], 29: [4], 31: [12], 32: [16], 33: [16, 17], 34: [20], 36: [9], 37: [18], 38: [9], 39: [9], 40: [10], 41: [8], 43: [13], 44: [10, 13], 45: [14], 46: [14], 47: [14], 48: [12], 49: [12], 50: [11], 51: [11], 52: [11], 54: [17], 57: [15], 58: [16], 59: [16], 60: [19], 61: [19], 62: [15], 65: [20], 69: [21] };
-  function dayLinks(d) { return d[4].concat((HB[d[0]] || []).map(function (n) { return ["Handbook ch. " + n, "#hb-" + n]; })); }
+  function dayLinks(d) { var extraLinks = { 8: ['CLI practice', '#cli-practice'], 13: ['Controlled loading', '#loading-practice'], 34: ['AI debugging and review', '#ai-practice'], 39: ['Boundary and decision tables', '#risk-design'], 42: ['Concept mapping', '#concept-mapping'], 45: ['Advanced API practice', '#advanced-api'], 46: ['Advanced API practice', '#advanced-api'], 56: ['Risk and test pyramid', '#risk-design'], 64: ['AI test design', '#ai-practice'], 69: ['Versioned prompts and evaluations', '#ai-practice'] };
+    return d[4].concat(extraLinks[d[0]] ? [extraLinks[d[0]]] : []).concat((HB[d[0]] || []).map(function (n) { return ["Handbook ch. " + n, "#hb-" + n]; })); }
   function linkHtml(l) {
     var ext = l[1].charAt(0) !== "#";
     return '<a href="' + esc(l[1]) + '"' + (ext ? ' target="_blank" rel="noopener"' : "") + ">" + esc(l[0]) + (ext ? " ↗" : "") + "</a>";
   }
   function renderRoadmap() {
+    var openDays = $$("#weeks details[open]").map(function (el) { return el.closest('.day').querySelector('[data-day]').getAttribute('data-day'); });
+    var active = document.activeElement, focusTopic = active && active.getAttribute('data-topic'), focusDay = active && active.getAttribute('data-day');
     var html = "";
     [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].forEach(function (w) {
       var days = DAYS.filter(function (d) { return d[1] === w; });
-      var n = days.filter(function (d) { return state.done.indexOf(d[0]) >= 0; }).length;
+      var weekTopics = days.flatMap(function (d) { return topicCatalog[d[0]]; });
+      var weekTopicDone = weekTopics.filter(function (t) { return state.topics[t.id]; }).length;
+      var n = days.filter(function (d) { return dayComplete(d[0]); }).length;
       html += '<div class="week"><h3>Week ' + w + " · " + esc(WEEKS[w]) + "</h3>" +
-        '<div class="wbar"><div class="bar"><i style="width:' + Math.round(n / days.length * 100) + '%"></i></div><span>' + n + "/" + days.length + "</span></div>";
+        '<div class="wbar"><div class="bar"><i style="width:' + Math.round(n / days.length * 100) + '%"></i></div><span>' + n + "/" + days.length + " days · " + weekTopicDone + "/" + weekTopics.length + " topics</span></div>";
       days.forEach(function (d) {
-        var isDone = state.done.indexOf(d[0]) >= 0;
+        var isDone = dayComplete(d[0]);
         html += '<div class="day' + (isDone ? " done" : "") + '">' +
           '<input type="checkbox" id="day-' + d[0] + '" data-day="' + d[0] + '"' + (isDone ? " checked" : "") + ' aria-label="Mark day ' + d[0] + ' done">' +
-          '<details><summary><span class="dn">Day ' + d[0] + '</span><span class="tt">' + esc(d[2]) + "</span></summary>" +
-          '<div class="more"><span>' + fmtTask(d[3]) + '</span><div class="links">' + dayLinks(d).map(linkHtml).join("") + "</div></div></details></div>";
+          '<details><summary><span class="dn">Day ' + d[0] + '</span><span class="tt">' + esc(d[2]) + "</span><span class=\"muted\">" + topicCatalog[d[0]].filter(function (t) { return state.topics[t.id]; }).length + "/" + topicCatalog[d[0]].length + " topics</span></summary>" +
+          '<div class="more">' + topicCatalog[d[0]].map(function (t) { return '<div class="topic"><b>' + esc(t.name) + '</b><p>' + fmtTask(t.task) + '</p><label><input type="checkbox" data-topic="' + t.id + '"' + (state.topics[t.id] ? ' checked' : '') + '> Completed<span class="sr-only">: ' + esc(t.name) + '</span></label></div>'; }).join('') + '<div class="links">' + dayLinks(d).map(linkHtml).join("") + "</div></div></details></div>";
       });
       html += "</div>";
     });
     $("#weeks").innerHTML = html;
-    var total = DAYS.length, doneN = state.done.length;
+    DAYS.forEach(function (d) {
+      var completed = topicCatalog[d[0]].filter(function (t) { return state.topics[t.id]; }).length;
+      $('#day-' + d[0]).indeterminate = completed > 0 && completed < topicCatalog[d[0]].length;
+    });
+    openDays.forEach(function (d) { $('#day-' + d).parentNode.querySelector('details').open = true; });
+    if (focusTopic || focusDay) { var target = $('#weeks [data-' + (focusTopic ? 'topic="' + focusTopic : 'day="' + focusDay) + '"]'); if (target) target.focus(); }
+    var total = DAYS.length, doneN = DAYS.filter(function (d) { return dayComplete(d[0]); }).length;
     var pct = Math.round(doneN / total * 100);
     $("#pct").textContent = pct + "%";
     $("#pctbar").style.width = pct + "%";
-    var next = DAYS.filter(function (d) { return state.done.indexOf(d[0]) < 0; })[0];
+    var next = DAYS.filter(function (d) { return !dayComplete(d[0]); })[0];
+    var topicDone = TopicProgress.ids.filter(function (id) { return state.topics[id]; }).length;
     $("#nextstep").innerHTML = next
-      ? 'Next: <a class="go" href="#roadmap">Day ' + next[0] + " · " + esc(next[2]) + "</a> <span class=\"muted\">(" + doneN + " of " + total + " days done)</span>"
+      ? 'Next: <a class="go" href="#roadmap">Day ' + next[0] + " · " + esc(next[2]) + "</a> <span class=\"muted\">(" + doneN + " of " + total + " days done; " + topicDone + "/" + TopicProgress.ids.length + " topics)</span>"
       : "All 70 days done. Time to apply with your GitHub repo.";
   }
   function applyFont(f) {
@@ -3425,8 +3675,14 @@ npx playwright show-report
   $("#themefab").addEventListener("click", function () { setTheme(THEME_NEXT[state.theme] || "auto"); });
   applyTheme(state.theme);
   $("#weeks").addEventListener("change", function (e) {
+    var topic = e.target.getAttribute("data-topic");
+    if (topic && TopicProgress.ids.indexOf(topic) >= 0) {
+      state.topics[topic] = e.target.checked;
+      save(); renderRoadmap(); return;
+    }
     var d = Number(e.target.getAttribute("data-day"));
     if (!d) return;
+    topicCatalog[d].forEach(function (t) { state.topics[t.id] = e.target.checked; });
     if (e.target.checked) { if (state.done.indexOf(d) < 0) state.done.push(d); }
     else state.done = state.done.filter(function (x) { return x !== d; });
     save(); renderRoadmap();
@@ -3804,7 +4060,7 @@ npx playwright show-report
   window.ProgressBridge = {
     read: function () { return JSON.parse(JSON.stringify(state)); },
     apply: function (next) {
-      state.done = next.done; state.labs = next.labs; state.quiz = next.quiz;
+      state.done = next.done; state.topics = next.topics || {}; migrateTopics(); state.labs = next.labs; state.quiz = next.quiz;
       try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
       renderRoadmap(); renderLabs(); renderQuiz();
     }

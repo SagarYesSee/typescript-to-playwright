@@ -22,6 +22,12 @@
     for (var d = 1; d <= 70; d++) values['day:' + d] = state.done.indexOf(d) >= 0;
     for (var l = 0; l < 16; l++) values['lab:' + l] = state.labs.indexOf(l) >= 0;
     for (var q = 0; q < 11; q++) values['quiz:' + q] = Object.prototype.hasOwnProperty.call(state.quiz, q) ? state.quiz[q] : null;
+    if (window.TopicProgress) {
+      window.TopicProgress.ids.forEach(function (id) {
+        if (Object.prototype.hasOwnProperty.call(state.topics || {}, id)) values["topic:" + id] = state.topics[id] === true;
+      });
+      values = window.TopicProgress.expand(values);
+    }
     return values;
   }
   var last = snapshot();
@@ -37,6 +43,10 @@
   function apply(values) {
     var state = bridge.read();
     state.done = []; state.labs = []; state.quiz = {};
+    if (window.TopicProgress) {
+      values = window.TopicProgress.expand(values); state.topics = {};
+      window.TopicProgress.ids.forEach(function (id) { state.topics[id] = values["topic:" + id]; });
+    }
     for (var d = 1; d <= 70; d++) if (values['day:' + d] === true) state.done.push(d);
     for (var l = 0; l < 16; l++) if (values['lab:' + l] === true) state.labs.push(l);
     for (var q = 0; q < 11; q++) {

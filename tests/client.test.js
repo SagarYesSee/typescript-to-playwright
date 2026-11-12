@@ -28,6 +28,8 @@ function client({ storage = new Map(), fetch, state = { done: [], labs: [], quiz
     setTimeout: (fn, ms) => { timers.set(++timerID, { fn, ms }); return timerID; },
     clearTimeout: id => timers.delete(id)
   });
+  vm.runInContext(readFileSync(new URL("../topic-progress.js", import.meta.url), "utf8"), context);
+  window.TopicProgress = context.TopicProgress;
   vm.runInContext(script, context);
   return {
     el, storage,
@@ -44,7 +46,7 @@ test('offline edits survive reload and send only changed fields', async () => {
   const offline = client({ storage, fetch: () => Promise.reject(new Error('offline')) });
   await tick();
   offline.change(state => { state.done.push(5); state.quiz[0] = 1; });
-  assert.deepEqual(JSON.parse(storage.get(key)).pending, { 'day:5': true, 'quiz:0': 1 });
+  assert.deepEqual(JSON.parse(storage.get(key)).pending, { 'day:5': true, 'quiz:0': 1, 'topic:d05-t01': true, 'topic:d05-t02': true, 'topic:d05-t03': true });
   const requests = [];
   const restored = client({ storage, state: offline.state, fetch: async (_, init) => {
     requests.push(init);
@@ -52,7 +54,7 @@ test('offline edits survive reload and send only changed fields', async () => {
   } });
   await tick();
   assert.equal(requests[0].method, 'PATCH');
-  assert.deepEqual(JSON.parse(requests[0].body).changes, { 'day:5': true, 'quiz:0': 1 });
+  assert.deepEqual(JSON.parse(requests[0].body).changes, { 'day:5': true, 'quiz:0': 1, 'topic:d05-t01': true, 'topic:d05-t02': true, 'topic:d05-t03': true });
   assert.deepEqual(restored.state.done, [2, 5]);
   assert.deepEqual(JSON.parse(storage.get(key)).pending, {});
 });
@@ -65,7 +67,7 @@ test('changes during a request stay queued instead of being overwritten', async 
   complete(await ok({ 'day:1': true }));
   await tick();
   assert.deepEqual(device.state.done, [1, 7]);
-  assert.deepEqual(JSON.parse(storage.get(key)).pending, { 'day:7': true });
+  assert.deepEqual(JSON.parse(storage.get(key)).pending, { 'day:7': true, 'topic:d07-t01': true, 'topic:d07-t02': true, 'topic:d07-t03': true });
 });
 
 test('unchecks and quiz resets remain explicit queued changes', async () => {
@@ -73,5 +75,51 @@ test('unchecks and quiz resets remain explicit queued changes', async () => {
   const device = client({ storage, state: { done: [1], labs: [0], quiz: { 0: 2 } }, fetch: () => Promise.reject(new Error('offline')) });
   await tick();
   device.change(state => { state.done = []; state.labs = []; state.quiz = {}; });
-  assert.deepEqual(JSON.parse(storage.get(key)).pending, { 'day:1': false, 'lab:0': false, 'quiz:0': null });
+  assert.deepEqual(JSON.parse(storage.get(key)).pending, { 'day:1': false, 'lab:0': false, 'quiz:0': null, 'topic:d01-t01': false, 'topic:d01-t02': false });
+});
+
+
+test('legacy completed cloud day expands topics; explicit uncheck survives reload and offline sync', async () => {
+  const storage = new Map([[key, JSON.stringify({ code, pending: {} })]]);
+  const device = client({ storage, fetch: () => ok({ 'day:1': true, 'lab:2': true, 'quiz:1': 3 }) });
+  await tick();
+  assert.equal(device.state.topics['d01-t01'], true);
+  assert.equal(device.state.topics['d01-t02'], true);
+  assert.deepEqual(device.state.labs, [2]);
+  assert.deepEqual(device.state.quiz, { 1: 3 });
+  device.change(state => { state.topics['d01-t01'] = false; });
+  assert.deepEqual(JSON.parse(storage.get(key)).pending, { 'topic:d01-t01': false });
+  const restored = client({ storage, state: device.state, fetch: () => ok({ 'day:1': true, 'topic:d01-t01': false, 'lab:2': true, 'quiz:1': 3 }) });
+  await tick();
+  assert.equal(restored.state.topics['d01-t01'], false);
+  assert.equal(restored.state.topics['d01-t02'], true);
+  assert.deepEqual(JSON.parse(storage.get(key)).pending, {});
+});
+
+test('topic edits during a request remain visible and queued', async () => {
+  const storage = new Map([[key, JSON.stringify({ code, pending: {} })]]);
+  let complete;
+  const device = client({ storage, state: { done: [], labs: [], quiz: {}, topics: {} }, fetch: () => new Promise(resolve => { complete = resolve; }) });
+  device.change(state => { state.topics['d02-t01'] = true; });
+  complete(await ok({ 'topic:d03-t01': true }));
+  await tick();
+  assert.equal(device.state.topics['d02-t01'], true);
+  assert.equal(device.state.topics['d03-t01'], true);
+  assert.deepEqual(JSON.parse(storage.get(key)).pending, { 'topic:d02-t01': true });
+});
+
+test('connect without merge loads cloud only; with merge preserves local topics', async () => {
+  for (const merge of [false, true]) {
+    const storage = new Map();
+    const device = client({ storage, state: { done: [1], labs: [0], quiz: { 0: 1 }, topics: { 'd02-t01': true } }, fetch: () => ok({ 'day:3': true, 'quiz:0': 2 }) });
+    device.el('sync-code').value = code;
+    device.el('sync-merge').checked = merge;
+    device.el('sync-connect').click();
+    await tick();
+    assert.equal(device.state.topics['d02-t01'], merge);
+    assert.equal(device.state.topics['d01-t01'], merge);
+    assert.equal(device.state.topics['d03-t01'], true);
+    assert.equal(device.state.quiz[0], 2);
+    assert.equal(JSON.parse(storage.get(key)).code, code);
+  }
 });
