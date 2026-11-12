@@ -67,3 +67,40 @@ test('real D1: bearer isolation, missing codes, invalid data and CORS', async ()
   });
   assert.equal(invalid.status, 400);
 });
+
+
+test('topic IDs and boolean values are validated against the catalog', () => {
+  assert.equal(validateChanges({ 'topic:d01-t01': false }), true);
+  for (const changes of [{ 'topic:d01-t01': 1 }, { 'topic:d01-t99': true }, { 'topic:d71-t01': true }]) assert.equal(validateChanges(changes), false);
+});
+
+test('real D1: legacy vault, topic migration, independent devices and explicit false', async () => {
+  const code = makeCode();
+  await call('POST', code, { 'day:1': true, 'lab:0': true, 'quiz:0': 2 });
+  let legacy = (await call('GET', code)).body.values;
+  assert.equal(globalThis.TopicProgress.expand(legacy)['topic:d01-t01'], true);
+  const results = await Promise.all([
+    call('PATCH', code, { 'topic:d01-t01': false }),
+    call('PATCH', code, { 'topic:d02-t01': true })
+  ]);
+  results.forEach(result => assert.equal(result.status, 200));
+  let values = (await call('GET', code)).body.values;
+  const migrated = globalThis.TopicProgress.expand(values);
+  assert.equal(migrated['topic:d01-t01'], false);
+  assert.equal(migrated['topic:d01-t02'], true);
+  assert.equal(migrated['topic:d02-t01'], true);
+  assert.equal(values['day:1'], true);
+  assert.equal(values['lab:0'], true);
+  assert.equal(values['quiz:0'], 2);
+});
+
+test('real D1: complete topic snapshot fits request limit and persists', async () => {
+  const values = globalThis.TopicProgress.expand({});
+  for (let d = 1; d <= 70; d++) values['day:' + d] = false;
+  for (let l = 0; l < 16; l++) values['lab:' + l] = true;
+  for (let q = 0; q < 11; q++) values['quiz:' + q] = null;
+  assert.ok(Buffer.byteLength(JSON.stringify({ changes: values })) < 16384);
+  const result = await call('POST', makeCode(), values);
+  assert.equal(result.status, 201);
+  assert.deepEqual(result.body.values, values);
+});

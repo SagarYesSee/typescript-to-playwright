@@ -1,10 +1,13 @@
+import '../topic-progress.js';
+const topicIDs = new Set(globalThis.TopicProgress.ids.map(id => 'topic:' + id));
 const CODE = /^pw1_[a-f0-9]{64}$/;
 
 export function validateChanges(changes) {
   if (!changes || typeof changes !== 'object' || Array.isArray(changes)) return false;
   const fields = Object.entries(changes);
-  if (fields.length > 97) return false;
+  if (fields.length > 97 + topicIDs.size) return false;
   return fields.every(([field, value]) => {
+    if (topicIDs.has(field)) return typeof value === "boolean";
     let match;
     if ((match = /^day:([1-9]\d?)$/.exec(field)))
       return Number(match[1]) <= 70 && typeof value === 'boolean';
@@ -73,7 +76,7 @@ export default {
         if (!validateChanges(body?.changes)) return json({ error: 'Invalid progress data' }, 400);
         if (request.method === 'POST') statements.push(env.DB.prepare('INSERT INTO vaults (id) VALUES (?)').bind(id));
         const entries = Object.entries(body.changes).map(([key, value]) => ({ key, value: JSON.stringify(value) }));
-        // One statement handles all 97 possible fields, within D1's free query limit.
+        // One statement handles all supported fields, within D1's free query limit.
         statements.push(env.DB.prepare(`
           INSERT INTO progress (vault_id, field, value)
           SELECT ?, json_extract(value, '$.key'), json_extract(value, '$.value')
